@@ -1,0 +1,35 @@
+description: "Builds and publishes binary to GitHub Releases"
+
+parameters:
+  - use: https://github.com/velocity-ci/parameter.aws-ssm/releases/download/0.1.1/aws-ssm
+    arguments:
+      name: /velocityci/github-release-token
+    exports:
+      value: github_release_token
+
+steps:
+  - description: Install dependencies
+    type: run
+    image: vjftw/go-dep:1.11
+    mountPoint: /go/src/github.com/velocity-ci/ssh-keyscan
+    command: dep ensure -v
+
+  - description: Build binaries
+    type: run
+    image: golang:1.11
+    mountPoint: /go/src/github.com/velocity-ci/ssh-keyscan
+    command: ./scripts/build.sh
+
+  - description: Upload linux_amd64 release binary
+    type: run
+    image: civelocity/run.github-release
+    environment:
+      GITHUB_ACCESS_TOKEN: ${github_release_token}
+    command: velocity-ci ssh-keyscan ${GIT_DESCRIBE} dist/ssh-keyscan_linux_amd64
+
+  - description: Upload darwin_amd64 release binary
+    type: run
+    image: civelocity/run.github-release
+    environment:
+      GITHUB_ACCESS_TOKEN: ${github_release_token}
+    command: velocity-ci ssh-keyscan ${GIT_DESCRIBE} dist/ssh-keyscan_darwin_amd64
